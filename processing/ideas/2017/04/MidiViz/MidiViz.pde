@@ -2,48 +2,85 @@ import java.util.Collection;
 import javax.sound.midi.*;
 
 AMidiPlayer midiPlayer;
-PShader shader;
+
+
+// array that stores note velocities
+int[] myNotes = new int[128];
+float step = 0;
+float stepwidth = 2;
+int moveback = 0;
+
 
 void setup() {
-  fullScreen(P3D);
+  size(1600, 1000);
   background(0);
-  colorMode(HSB);
-  noStroke();
+  smooth();
+  
   midiPlayer = new AMidiPlayer();
-  midiPlayer.load(dataPath("pianocon.mid"));
+  midiPlayer.load(dataPath("evo.mid"));
   midiPlayer.start();
-  shader = loadShader("shader.glsl");
+  
+  //fastforward through the sequence
+  midiPlayer.setBPM(5800);
+  println("BPM IS: "+midiPlayer.getBPM());
+  
+  textSize(20);
 }
 
 void draw() {
-  //background(#112244);
-  shader.set("n", 20 * noise(frameCount * 0.001));
+ 
+  // read actual notelist
+  myNotes = midiPlayer.NoteList();
+      
+  //pushMatrix();
+  //translate(moveback,0);
 
-  translate(width/2, height/2);
-  rotateZ(noise(0.23, 15 * frameCount * 0.00013));
-  rotateY(frameCount * 0.003);
+  for (int i = 0; i < myNotes.length; i++) {
+    float col = myNotes[i];
+    float y = map(i, 0, 127, height-10, 10 );
+    
+     if(col > 0){
+      col = map(col, 0, 127, 50, 255);   
+     }
+     else {
+       col = 0;
+     }
+     
+      noStroke();
+      fill(col);
+      rect(step, y, stepwidth, 10);
 
-  directionalLight(30, 20, 255, 1, 1, 1);
-  directionalLight(150, 20, 255, -1, -1, -1);
-  
-  for (Note n : midiPlayer.getNotes()) {
-    fill(map(n.note % 12, 0, 11, 0, 255), 
-      map(n.channel, 0, 15, 80, 255), 
-      map(n.note, 0, 127, 100, 255) * random(0.9, 1.0));
-
-    pushMatrix();
-    float t = frameCount * 0.003;
-    scale(n.velocity * 0.05);
-    rotateX(n.channel + noise(n.note * 0.1, t));
-    rotateY(n.note * 0.06);
-    rotateZ(map(n.note % 12, 0, 12, 0, TWO_PI));
-    pushMatrix();
-    translate(0, n.velocity * 0.7, 0);
-    box(40.0 / n.living, n.velocity * 0.1 + random(10), 40.0 / n.living);
-    popMatrix();    
-    translate(0, 5000.0, 0);
-    box(0.2, 10000, 0.2);
-    popMatrix();
   }
-  midiPlayer.update();
+  
+  step += stepwidth;
+ 
+  // clean status bar
+  fill(0);
+  rect(0,0,width,60);
+  
+  // status bar
+  fill(200);
+  rect(0,0,step,20);
+  
+ 
+  float counter = map(step,0, width, 0, 7000);
+  
+  if(counter <= 7000)text("training iterations: "+int(counter), 10,50);
+  else text("training iterations: "+7000, 10,50);
+
+
+ 
+  //popMatrix();
+//  if (step % width == 0) {
+//    //clear screen very rudimentary :)
+//    background(0)
+    
+//    //push matrix back as soon as stepper hits width;
+//     moveback-= width;
+
+//  }
+  
+  
+
+
 }
